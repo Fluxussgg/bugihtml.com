@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTML Çalıştırıcı + Giriş Paneli</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: #000; overflow: hidden; color: #fff; }
+
+/* Genel gizleme */
+#editor, #welcome, #loginPanel, #registerPanel, #blankPage { display: none; }
+.container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+
+/* Panel stilleri */
+.panel {
+    background-color: #111;
+    padding: 30px 40px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    text-align: center;
+    transition: background 1s, box-shadow 1s;
+    animation: panelGradient 10s infinite alternate;
+}
+@keyframes panelGradient {
+    0% { --theme-color: #4db8ff; box-shadow: 0 0 20px #4db8ff; }
+    25% { --theme-color: #4cff4c; box-shadow: 0 0 20px #4cff4c; }
+    50% { --theme-color: #b84cff; box-shadow: 0 0 20px #b84cff; }
+    75% { --theme-color: #ff4c4c; box-shadow: 0 0 20px #ff4c4c; }
+    100% { --theme-color: #4db8ff; box-shadow: 0 0 20px #4db8ff; }
+}
+.panel h2 { margin-bottom: 20px; }
+.panel input {
+    display: block;
+    width: 250px;
+    padding: 10px;
+    margin: 10px auto;
+    border-radius: 8px;
+    border: 2px solid var(--theme-color, #4db8ff);
+    outline: none;
+    transition: border-color 0.5s, box-shadow 0.5s, color 0.5s;
+}
+.panel input:focus {
+    border-color: var(--theme-color, #4db8ff);
+    box-shadow: 0 0 10px var(--theme-color, #4db8ff);
+}
+
+/* Buton stili */
+.panel button, #updateButton, #topButtons button, #updatePanel button {
+    padding: 10px 20px;
+    border-radius: 50px;
+    border: 2px solid var(--theme-color, #4db8ff);
+    background: linear-gradient(90deg, var(--theme-color, #4db8ff), #000);
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.4s ease;
+}
+.panel button:hover, #updateButton:hover, #topButtons button:hover, #updatePanel button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--theme-color, #4db8ff);
+}
+
+/* Üst butonlar */
+#topButtons {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    z-index: 10;
+}
+
+/* Editör ekranı */
+#editor {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* Kod ve önizleme bölümü */
+.main-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    flex: 1;
+    padding: 20px;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Partikül canvas */
+#editorCanvas, #blankCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+textarea, .iframe-container {
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    position: relative;
+    transition: border-color 0.5s, background 0.5s;
+    z-index: 1;
+}
+
+textarea {
+    width: 90%;
+    height: 80%;
+    padding: 15px;
+    background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+    color: var(--theme-color, #4db8ff);
+    font-family: monospace;
+    font-size: 16px;
+    resize: none;
+    outline: none;
+    border: 2px solid var(--theme-color, #4db8ff);
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.5s, color 0.3s;
+}
+textarea:focus {
+    box-shadow: 0 0 20px var(--theme-color, #4db8ff);
+    transform: scale(1.02);
+}
+
+.iframe-container {
+    display: none;
+    width: 90%;
+    height: 80%;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(135deg, var(--theme-color, #4db8ff), #000);
+    border: 2px solid var(--theme-color, #4db8ff);
+}
+iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
+#runContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+}
+.theme-selector {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.theme-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.theme-btn:hover { transform: scale(1.2); box-shadow: 0 0 10px #fff; }
+
+#runButton {
+    padding: 6px 12px;
+    font-size: 13px;
+    display: block;
+    cursor: pointer;
+    background-color: transparent;
+    border: 2px solid var(--theme-color, #4db8ff);
+    color: var(--theme-color, #4db8ff);
+    font-weight: bold;
+    border-radius: 8px;
+    transition: background-color 0.2s, color 0.2s, transform 0.2s, border-color 0.2s;
+}
+#runButton:hover {
+    background-color: var(--theme-color, #4db8ff);
+    color: #000;
+    transform: scale(1.05);
+}
+
+/* Geri dön butonu stili */
+#closePreview {
+    margin-top: 8px;
+    padding: 8px 18px;
+    border-radius: 12px;
+    border: 2px solid var(--theme-color, #4db8ff);
+    background: #111;
+    color: var(--theme-color, #4db8ff);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+#closePreview:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px var(--theme-color, #4db8ff);
+    background: linear-gradient(90deg, var(--theme-color, #4db8ff), #000);
+    color: #fff;
+}
+
+/* Boş sayfa ve hesap kutusu */
+#blankPage { 
+    background:#000; 
+    width:100%; 
+    height:100%; 
+    display:flex; 
+    justify-content:flex-start; 
+    align-items:flex-start; 
+    flex-direction:column; 
+    padding-top:80px;
+    gap:10px;
+    position: relative;
+}
+
+/* Hesap kutuları */
+.accountBox {
+    height: 80px; 
+    border-radius: 12px;
+    border: 2px solid var(--theme-color, #4db8ff);
+    background: #000;
+    color: var(--theme-color, #4db8ff);
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 10px;
+    transition: all 0.5s ease;
+}
+.accountBox:hover {
+    box-shadow: 0 0 25px var(--theme-color, #4db8ff);
+    transform: scale(1.05);
+}
+
+/* Güncelle panel */
+#updatePanel {
+    display:none; 
+    margin-top:10px; 
+    background:#111; 
+    padding:20px; 
+    border-radius:10px; 
+    width:50%; 
+    box-shadow:0 0 15px rgba(0,0,0,0.5);
+    transition: all 0.4s ease;
+}
+#updatePanel input {
+    width:90%; 
+    margin-bottom:10px; 
+    padding:5px; 
+    border-radius:5px; 
+    border:1px solid var(--theme-color, #4db8ff);
+    transition: all 0.4s ease;
+}
+#updateButton {
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: 2px solid var(--theme-color, #4db8ff);
+    background: #000;
+    color: var(--theme-color, #4db8ff);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    width: calc(100% - 20px);
+    max-width: 600px; 
+    margin-top: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+#updateButton:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px var(--theme-color, #4db8ff);
+    border-color: var(--theme-color, #4db8ff);
+    color: #fff;
+    background: linear-gradient(90deg, var(--theme-color, #4db8ff), #000);
+}
+</style>
+</head>
+<body>
+
+<!-- Üstteki butonlar -->
+<div id="topButtons">
+    <button onclick="showEditor()">Kod</button>
+    <button onclick="showBlank()">Hesap</button>
+</div>
+
+<!-- Giriş Paneli -->
+<div id="loginPanel" class="container">
+    <div class="panel">
+        <h2>Giriş Yap</h2>
+        <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
+        <input type="password" id="loginPass" placeholder="Şifre">
+        <button onclick="login()">Giriş Yap</button>
+        <p style="margin-top:10px; cursor:pointer; color:#4db8ff;" onclick="showRegister()">Hesap Oluştur</p>
+    </div>
+</div>
+
+<!-- Kayıt Paneli -->
+<div id="registerPanel" class="container">
+    <div class="panel">
+        <h2>Hesap Oluştur</h2>
+        <input type="text" id="regUser" placeholder="Kullanıcı Adı">
+        <input type="password" id="regPass" placeholder="Şifre">
+        <button onclick="register()">Hesap Aç</button>
+        <p style="margin-top:10px; cursor:pointer; color:#4db8ff;" onclick="showLogin()">Zaten Hesap Var?</p>
+    </div>
+</div>
+
+<!-- Editör -->
+<div id="editor">
+    <canvas id="editorCanvas"></canvas>
+    <div class="main-container">
+        <textarea id="code" placeholder="HTML, CSS ve JS kodunu buraya yaz..."></textarea>
+        <div class="iframe-container" id="iframeContainer">
+            <iframe id="result"></iframe>
+            <div class="animation-overlay" id="overlay"></div>
+        </div>
+    </div>
+    <div id="runContainer">
+        <div class="theme-selector">
+            <div class="theme-btn" style="background-color:#4db8ff;" onclick="setTheme('#4db8ff')"></div>
+            <div class="theme-btn" style="background-color:#4cff4c;" onclick="setTheme('#4cff4c')"></div>
+            <div class="theme-btn" style="background-color:#b84cff;" onclick="setTheme('#b84cff')"></div>
+            <div class="theme-btn" style="background-color:#ff4c4c;" onclick="setTheme('#ff4c4c')"></div>
+        </div>
+        <button id="runButton" onclick="runCode()">Çalıştır</button>
+        <!-- Geri Dön Butonu buraya eklenecek -->
+    </div>
+</div>
+
+<!-- Boş siyah sayfa -->
+<div id="blankPage">
+    <canvas id="blankCanvas"></canvas>
+    <div style="display:flex; width:100%; justify-content:flex-start; gap:10px;">
+        <div class="accountBox" id="usernameBox" style="flex:1;">
+            <p id="usernameDisplay">Kullanıcı Adı: Örnek</p>
+        </div>
+        <div class="accountBox" id="passwordBox" style="flex:1;">
+            <p id="passwordDisplay">Şifre: ********</p>
+        </div>
+    </div>
+    <button id="updateButton" onclick="showUpdatePanel()">Güncelle</button>
+    <div id="updatePanel">
+        <h3 style="margin-bottom:10px;">Bilgileri Güncelle</h3>
+        <input type="text" id="newUsername" placeholder="Yeni Kullanıcı Adı">
+        <input type="password" id="newPassword" placeholder="Yeni Şifre">
+        <button onclick="updateAccount()">Kaydet</button>
+    </div>
+</div>
+
+<script>
+// Sayfa geçişleri
+function showEditor(){
+    document.getElementById('editor').style.display='flex';
+    document.getElementById('blankPage').style.display='none';
+    document.getElementById('topButtons').style.display='flex';
+}
+function showBlank(){
+    document.getElementById('editor').style.display='none';
+    document.getElementById('blankPage').style.display='flex';
+    document.getElementById('topButtons').style.display='flex';
+}
+
+// Giriş / Kayıt Paneli
+function showLogin() { document.getElementById('loginPanel').style.display='flex'; document.getElementById('registerPanel').style.display='none'; document.getElementById('topButtons').style.display='none'; }
+function showRegister() { document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='flex'; document.getElementById('topButtons').style.display='none'; }
+
+function register(){
+    const user = document.getElementById('regUser').value;
+    const pass = document.getElementById('regPass').value;
+    if(!user || !pass){ alert("Kullanıcı adı ve şifre girin"); return; }
+    if(localStorage.getItem("user_"+user)){ alert("Bu kullanıcı zaten var"); return; }
+    localStorage.setItem("user_"+user, pass);
+    alert("Hesap oluşturuldu!");
+    showLogin();
+}
+
+function login(){
+    const user = document.getElementById('loginUser').value;
+    const pass = document.getElementById('loginPass').value;
+    const stored = localStorage.getItem("user_"+user);
+    if(stored && stored === pass){
+        document.getElementById('loginPanel').style.display='none';
+        document.getElementById('editor').style.display='flex';
+        document.getElementById('topButtons').style.display='flex';
+        updateAccountInfo(user, pass);
+    }else{
+        alert("Hatalı kullanıcı adı veya şifre");
+    }
+}
+
+// Kod çalıştırma ve önizleme
+function runCode() {
+    const codeArea = document.getElementById('code');
+    const iframeContainer = document.getElementById('iframeContainer');
+    const iframe = document.getElementById('result');
+    const runContainer = document.getElementById('runContainer');
+
+    // Kod alanını gizle, iframe'i göster
+    codeArea.style.display = 'none';
+    iframeContainer.style.display = 'block';
+    iframeContainer.style.width = '90%';
+    iframeContainer.style.height = '80%';
+
+    iframe.srcdoc = codeArea.value;
+
+    // Altta geri dön butonu ekle (modern kutucuk)
+    if(!document.getElementById('closePreview')) {
+        const closeBtn = document.createElement('button');
+        closeBtn.id = 'closePreview';
+        closeBtn.textContent = 'Geri Dön';
+        closeBtn.onclick = closePreview;
+        runContainer.appendChild(closeBtn);
+    }
+}
+
+function closePreview() {
+    const codeArea = document.getElementById('code');
+    const iframeContainer = document.getElementById('iframeContainer');
+    const closeBtn = document.getElementById('closePreview');
+
+    iframeContainer.style.display = 'none';
+    codeArea.style.display = 'block';
+
+    closeBtn.remove();
+}
+
+// Tema değiştirme
+function updateAccountBoxesTheme(color){
+    const boxes = [document.getElementById('usernameBox'), document.getElementById('passwordBox')];
+    boxes.forEach(box => { box.style.setProperty('--theme-color', color); });
+}
+
+function setTheme(color){
+    document.documentElement.style.setProperty('--theme-color', color);
+    const iframeContainer = document.getElementById('iframeContainer');
+    iframeContainer.style.background = `linear-gradient(135deg, ${color}, #000)`;
+    iframeContainer.style.borderColor = color;
+    document.getElementById('code').style.borderColor = color;
+    updateAccountBoxesTheme(color);
+    const updateBtn = document.getElementById('updateButton');
+    updateBtn.style.borderColor = color;
+}
+
+// Hesap bilgilerini güncelle
+function updateAccountInfo(username, password){
+    document.getElementById('usernameDisplay').textContent = "Kullanıcı Adı: " + username;
+    document.getElementById('passwordDisplay').textContent = "Şifre: " + password;
+}
+
+// Güncelle panelini aç/kapat
+function showUpdatePanel(){
+    const panel = document.getElementById('updatePanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+// Güncelle
+function updateAccount(){
+    const newUser = document.getElementById('newUsername').value;
+    const newPass = document.getElementById('newPassword').value;
+    if(newUser) document.getElementById('usernameDisplay').textContent = "Kullanıcı Adı: "+newUser;
+    if(newPass) document.getElementById('passwordDisplay').textContent = "Şifre: "+newPass;
+    alert("Bilgiler güncellendi!");
+}
+
+// Partikül animasyonu
+function createParticles(canvasId){
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    function resizeCanvas(){ canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    let particles = [];
+    for(let i=0;i<150;i++){
+        particles.push({
+            x: Math.random()*canvas.width,
+            y: Math.random()*canvas.height,
+            vx: Math.random()*1-0.5,
+            vy: Math.random()*0.5+0.2,
+            size: Math.random()*2+1
+        });
+    }
+
+    function animate(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        particles.forEach(p=>{
+            p.x += p.vx;
+            p.y += p.vy;
+            if(p.x>canvas.width) p.x=0;
+            if(p.x<0) p.x=canvas.width;
+            if(p.y>canvas.height) p.y=0;
+            if(p.y<0) p.y=canvas.height;
+            ctx.fillStyle="rgba(255,255,255,0.8)";
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+            ctx.fill();
+        });
+        requestAnimationFrame(animate);
+    }
+    animate();
+}
+
+// Başlangıç olarak login panelini göster
+showLogin();
+createParticles('editorCanvas');
+createParticles('blankCanvas');
+</script>
+</body>
+</html>
