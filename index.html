@@ -9,8 +9,33 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: #000; overflow: hidden; color: #fff; }
 
-/* Genel gizleme */
-#editor, #welcome, #loginPanel, #registerPanel, #blankPage { display: none; }
+/* GENEL GEÇİŞ SİSTEMİ (YENİ) */
+/* Tüm ana ekranları başlangıçta gizliyoruz (opacity:0, visibility:hidden) ve geçiş ekliyoruz */
+#editor, #blankPage, #loginPanel, #registerPanel {
+    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+    position: absolute; /* Tüm sayfaların üst üste binmesini sağlar */
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    visibility: hidden;
+    /* display: none; veya display: flex; CSS'ten kaldırıldı, JS ile .active-screen sınıfı yönetecek */
+}
+
+/* Aktif olan sayfa */
+.active-screen {
+    opacity: 1 !important;
+    visibility: visible !important;
+    /* display: flex; veya display: block; gibi uygun display değeri JS ile eklenecek */
+}
+
+/* Container'lar normalde flex olmalı, ama başlangıçta sadece login/register görüneceği için ayarlandı */
+#loginPanel.active-screen, #registerPanel.active-screen, #editor.active-screen, #blankPage.active-screen {
+    display: flex; /* Aktif olduğunda esnek düzeni geri getir */
+}
+
+
 .container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column; }
 
 /* Panel stilleri */
@@ -22,13 +47,16 @@ body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: 
     text-align: center;
     transition: background 1s, box-shadow 1s;
     animation: panelGradient 10s infinite alternate;
+    position: relative; /* Container içinde düzgün hizalama için */
 }
 @keyframes panelGradient {
-    0% { --theme-color: #4db8ff; box-shadow: 0 0 20px #4db8ff; }
+    -25% { --theme-color: #FF00D4; box-shadow: 0 0 20px #FF00D4; }
+    0% { --theme-color: #00FFF2; box-shadow: 0 0 20px #00FFF2; }
     25% { --theme-color: #4cff4c; box-shadow: 0 0 20px #4cff4c; }
-    50% { --theme-color: #b84cff; box-shadow: 0 0 20px #b84cff; }
-    75% { --theme-color: #ff4c4c; box-shadow: 0 0 20px #ff4c4c; }
-    100% { --theme-color: #4db8ff; box-shadow: 0 0 20px #4db8ff; }
+    50% { --theme-color: #E100FF; box-shadow: 0 0 20px #E100FF; }
+    75% { --theme-color: #E1FF00; box-shadow: 0 0 20px #E1FF00; }
+    100% { --theme-color: #00FFF2; box-shadow: 0 0 20px #00FFF2; }
+    125% { --theme-color: #FF8000; box-shadow: 0 0 20px #FF8000; }
 }
 .panel h2 { margin-bottom: 20px; }
 .panel input {
@@ -37,29 +65,33 @@ body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: 
     padding: 10px;
     margin: 10px auto;
     border-radius: 8px;
-    border: 2px solid var(--theme-color, #4db8ff);
+    border: 2px solid var(--theme-color, #00FFF2);
     outline: none;
     transition: border-color 0.5s, box-shadow 0.5s, color 0.5s;
+    color: #fff;
+    background-color: #000;
 }
 .panel input:focus {
-    border-color: var(--theme-color, #4db8ff);
-    box-shadow: 0 0 10px var(--theme-color, #4db8ff);
+    border-color: var(--theme-color, #00FFF2);
+    box-shadow: 0 0 10px var(--theme-color, #00FFF2);
 }
 
-/* Buton stili */
+/* Buton stili (TÜM BUTONLAR İÇİN ORTAK GENİŞLİK) */
 .panel button, #updateButton, #topButtons button, #updatePanel button {
-    padding: 10px 20px;
+    padding: 10px 15px; 
+    width: 100px; /* Sabit genişlik */
+    text-align: center;
     border-radius: 50px;
-    border: 2px solid var(--theme-color, #4db8ff);
-    background: linear-gradient(90deg, var(--theme-color, #4db8ff), #000);
+    border: 2px solid var(--theme-color, #00FFF2);
+    background: linear-gradient(90deg, var(--theme-color, #00FFF2), #000);
     color: #fff;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.4s ease;
 }
 .panel button:hover, #updateButton:hover, #topButtons button:hover, #updatePanel button:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 20px var(--theme-color, #4db8ff);
+    transform: scale(1.05); 
+    box-shadow: 0 0 20px var(--theme-color, #00FFF2);
 }
 
 /* Üst butonlar */
@@ -69,18 +101,28 @@ body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: 
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 15px;
+    gap: 10px; 
     z-index: 10;
+    max-width: 95vw;
+    opacity: 0; /* Başlangıçta gizli */
+    visibility: hidden; /* Başlangıçta gizli */
+    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out; /* Geçiş ekle */
+}
+
+/* Üst butonlar görünür olduğunda */
+#topButtons.active {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* Editör ekranı */
 #editor {
-    display: flex;
+    display: flex; /* Varsayılan olarak flex, active-screen ile birlikte çalışır */
     height: 100%;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    position: relative;
+    /* position: relative; kaldırıldı, üstteki .active-screen'e taşındı */
 }
 
 /* Kod ve önizleme bölümü */
@@ -99,7 +141,6 @@ body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: 
 /* Partikül canvas */
 #editorCanvas, #blankCanvas {
     position: absolute;
-    top: 0; left: 0;
     width: 100%; height: 100%;
     pointer-events: none;
     z-index: 0;
@@ -111,35 +152,33 @@ textarea, .iframe-container {
     position: relative;
     transition: border-color 0.5s, background 0.5s;
     z-index: 1;
+    width: 90%;
+    height: 80%;
 }
 
 textarea {
-    width: 90%;
-    height: 80%;
     padding: 15px;
     background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
-    color: var(--theme-color, #4db8ff);
+    color: var(--theme-color, #00FFF2);
     font-family: monospace;
     font-size: 16px;
     resize: none;
     outline: none;
-    border: 2px solid var(--theme-color, #4db8ff);
+    border: 2px solid var(--theme-color, #00FFF2);
     transition: transform 0.3s, box-shadow 0.3s, border-color 0.5s, color 0.3s;
 }
 textarea:focus {
-    box-shadow: 0 0 20px var(--theme-color, #4db8ff);
+    box-shadow: 0 0 20px var(--theme-color, #00FFF2);
     transform: scale(1.02);
 }
 
 .iframe-container {
-    display: none;
-    width: 90%;
-    height: 80%;
+    display: none; /* runCode ile block/flex olacak */
     border-radius: 12px;
     overflow: hidden;
     position: relative;
-    background: linear-gradient(135deg, var(--theme-color, #4db8ff), #000);
-    border: 2px solid var(--theme-color, #4db8ff);
+    background: linear-gradient(135deg, var(--theme-color, #00FFF2), #000);
+    border: 2px solid var(--theme-color, #00FFF2);
 }
 iframe {
     width: 100%;
@@ -154,21 +193,6 @@ iframe {
     align-items: center;
     margin-top: 10px;
 }
-.theme-selector {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 6px;
-}
-.theme-btn {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid #fff;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.theme-btn:hover { transform: scale(1.2); box-shadow: 0 0 10px #fff; }
 
 #runButton {
     padding: 6px 12px;
@@ -176,14 +200,14 @@ iframe {
     display: block;
     cursor: pointer;
     background-color: transparent;
-    border: 2px solid var(--theme-color, #4db8ff);
-    color: var(--theme-color, #4db8ff);
+    border: 2px solid var(--theme-color, #00FFF2);
+    color: var(--theme-color, #00FFF2);
     font-weight: bold;
     border-radius: 8px;
     transition: background-color 0.2s, color 0.2s, transform 0.2s, border-color 0.2s;
 }
 #runButton:hover {
-    background-color: var(--theme-color, #4db8ff);
+    background-color: var(--theme-color, #00FFF2);
     color: #000;
     transform: scale(1.05);
 }
@@ -193,53 +217,93 @@ iframe {
     margin-top: 8px;
     padding: 8px 18px;
     border-radius: 12px;
-    border: 2px solid var(--theme-color, #4db8ff);
+    border: 2px solid var(--theme-color, #00FFF2);
     background: #111;
-    color: var(--theme-color, #4db8ff);
+    color: var(--theme-color, #00FFF2);
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 #closePreview:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 20px var(--theme-color, #4db8ff);
-    background: linear-gradient(90deg, var(--theme-color, #4db8ff), #000);
+    box-shadow: 0 0 20px var(--theme-color, #00FFF2);
+    background: linear-gradient(90deg, var(--theme-color, #00FFF2), #000);
     color: #fff;
 }
 
 /* Boş sayfa ve hesap kutusu */
 #blankPage { 
+    display:flex; /* Varsayılan olarak flex, active-screen ile birlikte çalışır */
     background:#000; 
     width:100%; 
     height:100%; 
-    display:flex; 
     justify-content:flex-start; 
-    align-items:flex-start; 
+    align-items:center; 
     flex-direction:column; 
     padding-top:80px;
-    gap:10px;
+    gap:20px;
     position: relative;
+    padding-left: 20px; 
+    padding-right: 20px;
 }
 
-/* Hesap kutuları */
+/* Hesap kutuları sarmalayıcısı */
+.accountBox-container {
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    max-width: 400px;
+    gap: 15px;
+}
+
 .accountBox {
-    height: 80px; 
+    min-height: 80px; 
     border-radius: 12px;
-    border: 2px solid var(--theme-color, #4db8ff);
-    background: #000;
-    color: var(--theme-color, #4db8ff);
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    border: 2px solid var(--theme-color, #00FFF2);
+    background: #111;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 10px;
+    align-items: flex-start;
+    padding: 15px 20px;
     transition: all 0.5s ease;
+    position: relative;
 }
 .accountBox:hover {
-    box-shadow: 0 0 25px var(--theme-color, #4db8ff);
-    transform: scale(1.05);
+    box-shadow: 0 0 25px var(--theme-color, #00FFF2);
+    transform: translateY(-2px);
+}
+.accountBox h3 {
+    margin-bottom: 5px;
+    color: var(--theme-color, #00FFF2);
+    font-size: 14px;
+    font-weight: 400;
+    text-transform: uppercase;
+}
+.accountBox p {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* Şifre Görme Butonu Stili */
+#showPassButton {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--theme-color, #00FFF2);
+    font-size: 20px;
+    cursor: pointer;
+    transition: color 0.3s;
+    line-height: 1;
+}
+#showPassButton:hover {
+    color: #fff;
+    text-shadow: 0 0 5px var(--theme-color, #00FFF2);
 }
 
 /* Güncelle panel */
@@ -249,7 +313,8 @@ iframe {
     background:#111; 
     padding:20px; 
     border-radius:10px; 
-    width:50%; 
+    width:90%; 
+    max-width: 400px; 
     box-shadow:0 0 15px rgba(0,0,0,0.5);
     transition: all 0.4s ease;
 }
@@ -258,95 +323,97 @@ iframe {
     margin-bottom:10px; 
     padding:5px; 
     border-radius:5px; 
-    border:1px solid var(--theme-color, #4db8ff);
+    border:1px solid var(--theme-color, #00FFF2);
+    color: #fff;
+    background-color: #000;
     transition: all 0.4s ease;
 }
 #updateButton {
     padding: 10px 20px;
     border-radius: 12px;
-    border: 2px solid var(--theme-color, #4db8ff);
+    border: 2px solid var(--theme-color, #00FFF2);
     background: #000;
-    color: var(--theme-color, #4db8ff);
+    color: var(--theme-color, #00FFF2);
     font-weight: bold;
     cursor: pointer;
     transition: all 0.4s ease;
-    width: calc(100% - 20px);
-    max-width: 600px; 
+    width: 90%; 
+    max-width: 400px;
     margin-top: 10px;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 #updateButton:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 25px var(--theme-color, #4db8ff);
-    border-color: var(--theme-color, #4db8ff);
+    box-shadow: 0 0 25px var(--theme-color, #00FFF2);
+    border-color: var(--theme-color, #00FFF2);
     color: #fff;
-    background: linear-gradient(90deg, var(--theme-color, #4db8ff), #000);
+    background: linear-gradient(90deg, var(--theme-color, #00FFF2), #000);
 }
 </style>
 </head>
 <body>
 
-<!-- Üstteki butonlar -->
-<div id="topButtons">
+<div id="topButtons"> <button onclick="cycleTheme()">Tema</button>
+
     <button onclick="showEditor()">Kod</button>
+    
     <button onclick="showBlank()">Hesap</button>
+    <button onclick="logout()">Çıkış Yap</button>
+
 </div>
 
-<!-- Giriş Paneli -->
 <div id="loginPanel" class="container">
     <div class="panel">
         <h2>Giriş Yap</h2>
         <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
         <input type="password" id="loginPass" placeholder="Şifre">
         <button onclick="login()">Giriş Yap</button>
-        <p style="margin-top:10px; cursor:pointer; color:#4db8ff;" onclick="showRegister()">Hesap Oluştur</p>
+        <p style="margin-top:10px; cursor:pointer; color:#00FFF2;" onclick="showRegister()">Hesap Oluştur</p>
     </div>
 </div>
 
-<!-- Kayıt Paneli -->
 <div id="registerPanel" class="container">
     <div class="panel">
         <h2>Hesap Oluştur</h2>
         <input type="text" id="regUser" placeholder="Kullanıcı Adı">
         <input type="password" id="regPass" placeholder="Şifre">
         <button onclick="register()">Hesap Aç</button>
-        <p style="margin-top:10px; cursor:pointer; color:#4db8ff;" onclick="showLogin()">Zaten Hesap Var?</p>
+        <p style="margin-top:10px; cursor:pointer; color:#00FFF2;" onclick="showLogin()">Zaten Hesap Var?</p>
     </div>
 </div>
 
-<!-- Editör -->
 <div id="editor">
     <canvas id="editorCanvas"></canvas>
     <div class="main-container">
-        <textarea id="code" placeholder="HTML, CSS ve JS kodunu buraya yaz..."></textarea>
+        <textarea id="code" oninput="triggerLivePreview()" placeholder="HTML, CSS ve JS kodunu buraya yaz..."></textarea>
         <div class="iframe-container" id="iframeContainer">
             <iframe id="result"></iframe>
             <div class="animation-overlay" id="overlay"></div>
         </div>
     </div>
+    
     <div id="runContainer">
-        <div class="theme-selector">
-            <div class="theme-btn" style="background-color:#4db8ff;" onclick="setTheme('#4db8ff')"></div>
-            <div class="theme-btn" style="background-color:#4cff4c;" onclick="setTheme('#4cff4c')"></div>
-            <div class="theme-btn" style="background-color:#b84cff;" onclick="setTheme('#b84cff')"></div>
-            <div class="theme-btn" style="background-color:#ff4c4c;" onclick="setTheme('#ff4c4c')"></div>
-        </div>
         <button id="runButton" onclick="runCode()">Çalıştır</button>
-        <!-- Geri Dön Butonu buraya eklenecek -->
     </div>
 </div>
 
-<!-- Boş siyah sayfa -->
 <div id="blankPage">
     <canvas id="blankCanvas"></canvas>
-    <div style="display:flex; width:100%; justify-content:flex-start; gap:10px;">
-        <div class="accountBox" id="usernameBox" style="flex:1;">
-            <p id="usernameDisplay">Kullanıcı Adı: Örnek</p>
+    
+    <div class="accountBox-container">
+        <div class="accountBox" id="usernameBox">
+            <h3>Kullanıcı Adı</h3>
+            <p id="usernameDisplay">Yükleniyor...</p>
         </div>
-        <div class="accountBox" id="passwordBox" style="flex:1;">
-            <p id="passwordDisplay">Şifre: ********</p>
+        
+        <div class="accountBox" id="passwordBox">
+            <h3>Şifre</h3>
+            <p id="passwordDisplay" data-actual-pass="">********</p>
+            
+            <button id="showPassButton" onclick="togglePasswordVisibility()">👁️</button>
         </div>
     </div>
+    
     <button id="updateButton" onclick="showUpdatePanel()">Güncelle</button>
     <div id="updatePanel">
         <h3 style="margin-bottom:10px;">Bilgileri Güncelle</h3>
@@ -357,63 +424,178 @@ iframe {
 </div>
 
 <script>
-// Sayfa geçişleri
+// --- TEMA DÖNGÜSÜ İÇİN DEĞİŞKENLER VE FONKSİYONLAR ---
+const THEMES = ['#FF00D4', '#00FFF2', '#4cff4c', '#E100FF', '#E1FF00', '#FF8000'];
+let currentThemeIndex = 0;
+let livePreviewTimeout; // Canlı önizleme için yeni değişken
+
+function cycleTheme() {
+    currentThemeIndex = (currentThemeIndex + 1) % THEMES.length;
+    const newColor = THEMES[currentThemeIndex];
+    setTheme(newColor);
+}
+
+function getThemeIndex(color) {
+    return THEMES.indexOf(color);
+}
+// -----------------------------------------------------------
+
+// --- GECİKMELİ CANLI ÖNİZLEME (DEBOUNCE) FONKSİYONU ---
+function triggerLivePreview() {
+    clearTimeout(livePreviewTimeout);
+    livePreviewTimeout = setTimeout(() => {
+        if (document.getElementById('iframeContainer').style.display !== 'none') {
+            runCode(true); // Canlı önizleme modunda çalıştır
+        }
+    }, 500); 
+}
+// -----------------------------------------------------------
+
+
+// --- SAYFA GEÇİŞ FONKSİYONLARI (GÜNCELLENDİ) ---
+function hideAllScreens() {
+    // Tüm ana ekranlardan ve topButtons'tan .active-screen sınıfını kaldır
+    document.getElementById('editor').classList.remove('active-screen');
+    document.getElementById('blankPage').classList.remove('active-screen');
+    document.getElementById('loginPanel').classList.remove('active-screen');
+    document.getElementById('registerPanel').classList.remove('active-screen');
+    document.getElementById('topButtons').classList.remove('active');
+}
+
+function showScreen(screenId, displayTopButtons = false) {
+    hideAllScreens(); // Tüm ekranları gizle
+
+    const screen = document.getElementById(screenId);
+    if (screen) {
+        screen.classList.add('active-screen'); // Yeni ekranı aktif yap
+    }
+
+    if (displayTopButtons) {
+        document.getElementById('topButtons').classList.add('active'); // Üst butonları göster
+    }
+}
+
+// showEditor, showBlank, showLogin, showRegister artık showScreen'i kullanacak
 function showEditor(){
-    document.getElementById('editor').style.display='flex';
-    document.getElementById('blankPage').style.display='none';
-    document.getElementById('topButtons').style.display='flex';
+    showScreen('editor', true);
 }
 function showBlank(){
-    document.getElementById('editor').style.display='none';
-    document.getElementById('blankPage').style.display='flex';
-    document.getElementById('topButtons').style.display='flex';
+    showScreen('blankPage', true);
+    
+    const lastUser = localStorage.getItem("lastLoggedInUser");
+    if (lastUser) {
+        const storedPass = localStorage.getItem("user_" + lastUser);
+        updateAccountInfo(lastUser, storedPass); 
+    }
 }
 
 // Giriş / Kayıt Paneli
-function showLogin() { document.getElementById('loginPanel').style.display='flex'; document.getElementById('registerPanel').style.display='none'; document.getElementById('topButtons').style.display='none'; }
-function showRegister() { document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='flex'; document.getElementById('topButtons').style.display='none'; }
+function showLogin() { 
+    showScreen('loginPanel', false); // Giriş ekranında üst butonlar gizli
+}
+function showRegister() { 
+    showScreen('registerPanel', false); // Kayıt ekranında üst butonlar gizli
+}
+// -----------------------------------------------------------
+
 
 function register(){
     const user = document.getElementById('regUser').value;
     const pass = document.getElementById('regPass').value;
     if(!user || !pass){ alert("Kullanıcı adı ve şifre girin"); return; }
     if(localStorage.getItem("user_"+user)){ alert("Bu kullanıcı zaten var"); return; }
+    
+    if(user.includes(' ') || user.length < 3) {
+        alert("Kullanıcı adı boşluk içeremez ve en az 3 karakter olmalıdır.");
+        return;
+    }
+
     localStorage.setItem("user_"+user, pass);
-    alert("Hesap oluşturuldu!");
+    alert("Hesap oluşturuldu! Giriş yapabilirsiniz.");
     showLogin();
+    
+    document.getElementById('regUser').value = '';
+    document.getElementById('regPass').value = '';
 }
 
 function login(){
     const user = document.getElementById('loginUser').value;
     const pass = document.getElementById('loginPass').value;
     const stored = localStorage.getItem("user_"+user);
+    
     if(stored && stored === pass){
-        document.getElementById('loginPanel').style.display='none';
-        document.getElementById('editor').style.display='flex';
-        document.getElementById('topButtons').style.display='flex';
-        updateAccountInfo(user, pass);
+        localStorage.setItem("lastLoggedInUser", user); 
+        
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
+        
+        updateAccountInfo(user, stored); 
+        setTheme(localStorage.getItem('theme_color') || THEMES[0]);
+        
+        showEditor(); // Giriş başarılı, editöre yönlendir
+
     }else{
-        alert("Hatalı kullanıcı adı veya şifre");
+        alert("Hatalı kullanıcı adı veya şifre.");
     }
 }
 
-// Kod çalıştırma ve önizleme
-function runCode() {
+function logout() {
+    localStorage.removeItem("lastLoggedInUser"); 
+    
+    alert("Başarıyla çıkış yapıldı.");
+    
+    showLogin(); 
+}
+
+function checkSession() {
+    const lastUser = localStorage.getItem("lastLoggedInUser");
+    if (lastUser) {
+        const storedPass = localStorage.getItem("user_" + lastUser);
+        updateAccountInfo(lastUser, storedPass); 
+        
+        const savedTheme = localStorage.getItem('theme_color') || THEMES[0];
+        setTheme(savedTheme);
+        currentThemeIndex = getThemeIndex(savedTheme);
+        
+        showEditor(); // Oturum açınca editörü göster
+
+    } else {
+        showLogin();
+    }
+}
+
+// Kod çalıştırma (isLivePreview parametresi eklendi)
+function runCode(isLivePreview = false) {
     const codeArea = document.getElementById('code');
     const iframeContainer = document.getElementById('iframeContainer');
     const iframe = document.getElementById('result');
     const runContainer = document.getElementById('runContainer');
 
-    // Kod alanını gizle, iframe'i göster
-    codeArea.style.display = 'none';
-    iframeContainer.style.display = 'block';
-    iframeContainer.style.width = '90%';
-    iframeContainer.style.height = '80%';
+    // Eğer Canlı Önizleme değilse ve kod alanı görünüyorsa, önizlemeyi aç
+    if (!isLivePreview && codeArea.style.display !== 'none') {
+        codeArea.style.display = 'none';
+        iframeContainer.style.display = 'block';
+        iframeContainer.style.width = '90%';
+        iframeContainer.style.height = '80%';
+    }
+    
+    // Iframe içeriğini ayarla
+    iframe.srcdoc = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { margin: 0; padding: 10px; color: #fff; background: #222; }
+            </style>
+        </head>
+        <body>
+            ${codeArea.value}
+        </body>
+        </html>
+    `;
 
-    iframe.srcdoc = codeArea.value;
-
-    // Altta geri dön butonu ekle (modern kutucuk)
-    if(!document.getElementById('closePreview')) {
+    // Geri dön butonu ekleme mantığı (Sadece butona basınca eklenir)
+    if(!document.getElementById('closePreview') && !isLivePreview) {
         const closeBtn = document.createElement('button');
         closeBtn.id = 'closePreview';
         closeBtn.textContent = 'Geri Dön';
@@ -430,48 +612,111 @@ function closePreview() {
     iframeContainer.style.display = 'none';
     codeArea.style.display = 'block';
 
-    closeBtn.remove();
+    if (closeBtn) {
+        closeBtn.remove();
+    }
 }
 
-// Tema değiştirme
 function updateAccountBoxesTheme(color){
     const boxes = [document.getElementById('usernameBox'), document.getElementById('passwordBox')];
-    boxes.forEach(box => { box.style.setProperty('--theme-color', color); });
+    boxes.forEach(box => { 
+        box.style.setProperty('--theme-color', color); 
+        const showPassBtn = document.getElementById('showPassButton');
+        if(showPassBtn) showPassBtn.style.color = color;
+    });
 }
 
 function setTheme(color){
+    localStorage.setItem('theme_color', color);
+    
     document.documentElement.style.setProperty('--theme-color', color);
     const iframeContainer = document.getElementById('iframeContainer');
     iframeContainer.style.background = `linear-gradient(135deg, ${color}, #000)`;
     iframeContainer.style.borderColor = color;
     document.getElementById('code').style.borderColor = color;
+    
+    const navButtons = document.querySelectorAll('#topButtons button');
+    navButtons.forEach(btn => {
+        btn.style.borderColor = color;
+        btn.style.background = `linear-gradient(90deg, ${color}, #000)`;
+        btn.style.color = '#fff';
+    });
+    
+    const runBtn = document.getElementById('runButton');
+    runBtn.style.borderColor = color;
+    runBtn.style.color = color;
+    
+    document.querySelector('.panel').style.setProperty('--theme-color', color);
+
     updateAccountBoxesTheme(color);
     const updateBtn = document.getElementById('updateButton');
     updateBtn.style.borderColor = color;
+    
+    // Canlı önizleme açıksa temayı güncelleyince kodu yeniden çalıştır
+    if (document.getElementById('iframeContainer').style.display !== 'none') {
+        runCode(true);
+    }
 }
 
-// Hesap bilgilerini güncelle
 function updateAccountInfo(username, password){
-    document.getElementById('usernameDisplay').textContent = "Kullanıcı Adı: " + username;
-    document.getElementById('passwordDisplay').textContent = "Şifre: " + password;
+    document.getElementById('usernameDisplay').textContent = username;
+    document.getElementById('passwordDisplay').textContent = "********";
+
+    document.getElementById('passwordDisplay').setAttribute('data-actual-pass', password);
+    
+    document.getElementById('showPassButton').textContent = '👁️';
 }
 
-// Güncelle panelini aç/kapat
+function togglePasswordVisibility() {
+    const passDisplay = document.getElementById('passwordDisplay');
+    const showPassBtn = document.getElementById('showPassButton');
+    
+    const actualPass = passDisplay.getAttribute('data-actual-pass');
+    
+    if (passDisplay.textContent === '********') {
+        passDisplay.textContent = actualPass;
+        showPassBtn.textContent = '🔒';
+    } else {
+        passDisplay.textContent = '********';
+        showPassBtn.textContent = '👁️';
+    }
+}
+
 function showUpdatePanel(){
     const panel = document.getElementById('updatePanel');
     panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
-// Güncelle
 function updateAccount(){
-    const newUser = document.getElementById('newUsername').value;
-    const newPass = document.getElementById('newPassword').value;
-    if(newUser) document.getElementById('usernameDisplay').textContent = "Kullanıcı Adı: "+newUser;
-    if(newPass) document.getElementById('passwordDisplay').textContent = "Şifre: "+newPass;
+    const lastUser = localStorage.getItem("lastLoggedInUser");
+    if (!lastUser) { alert("Önce giriş yapmalısınız!"); return; }
+
+    const newUsername = document.getElementById('newUsername').value;
+    const newPassword = document.getElementById('newPassword').value;
+    
+    let currentPass = localStorage.getItem("user_" + lastUser);
+    let userToUpdate = lastUser;
+    
+    if(newUsername) {
+        localStorage.removeItem("user_" + lastUser); 
+        localStorage.setItem("user_" + newUsername, currentPass);
+        localStorage.setItem("lastLoggedInUser", newUsername); 
+        userToUpdate = newUsername; 
+    }
+    
+    if(newPassword) {
+        currentPass = newPassword; 
+        localStorage.setItem("user_" + userToUpdate, newPassword);
+    }
+    
+    updateAccountInfo(userToUpdate, currentPass);
+
     alert("Bilgiler güncellendi!");
+    showUpdatePanel(); 
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newPassword').value = '';
 }
 
-// Partikül animasyonu
 function createParticles(canvasId){
     const canvas = document.getElementById(canvasId);
     const ctx = canvas.getContext('2d');
@@ -509,10 +754,9 @@ function createParticles(canvasId){
     animate();
 }
 
-// Başlangıç olarak login panelini göster
-showLogin();
 createParticles('editorCanvas');
 createParticles('blankCanvas');
+checkSession();
 </script>
 </body>
 </html>
