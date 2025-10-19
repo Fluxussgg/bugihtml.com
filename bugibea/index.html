@@ -3,52 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HTML Çalıştırıcı + Giriş Paneli</title>
+<title>Bugi Html Calıştırıcı</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: #000; overflow: hidden; color: #fff; }
 
-/* GENEL GEÇİŞ SİSTEMİ (YENİ) */
-/* Tüm ana ekranları başlangıçta gizliyoruz (opacity:0, visibility:hidden) ve geçiş ekliyoruz */
-#editor, #blankPage, #loginPanel, #registerPanel {
+/* GENEL GEÇİŞ SİSTEMİ */
+#editor, #blankPage, #loginPanel, #registerPanel, #backgroundScreen {
     transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
-    position: absolute; /* Tüm sayfaların üst üste binmesini sağlar */
+    position: absolute; 
     width: 100%;
     height: 100%;
     top: 0;
     left: 0;
     opacity: 0;
     visibility: hidden;
-    /* display: none; veya display: flex; CSS'ten kaldırıldı, JS ile .active-screen sınıfı yönetecek */
+    overflow-y: auto; 
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed; 
+    display: flex; 
+    flex-direction: column;
 }
+/* Arkaplan olarak ayarlanan ekranlarda resimlerin üstünde siyah katman */
+#editor.active-screen::before, 
+#blankPage.active-screen::before, 
+#loginPanel.active-screen::before, 
+#registerPanel.active-screen::before, 
+#backgroundScreen.active-screen::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* %60 saydam siyah katman */
+    z-index: 0; 
+    pointer-events: none; 
+}
+
 
 /* Aktif olan sayfa */
 .active-screen {
     opacity: 1 !important;
     visibility: visible !important;
-    /* display: flex; veya display: block; gibi uygun display değeri JS ile eklenecek */
 }
 
-/* Container'lar normalde flex olmalı, ama başlangıçta sadece login/register görüneceği için ayarlandı */
-#loginPanel.active-screen, #registerPanel.active-screen, #editor.active-screen, #blankPage.active-screen {
-    display: flex; /* Aktif olduğunda esnek düzeni geri getir */
+#loginPanel.active-screen, #registerPanel.active-screen {
+    display: flex; 
 }
 
 
 .container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column; }
 
-/* Panel stilleri */
+/* Panel stilleri - Liquid Glass */
 .panel {
-    background-color: #111;
+    background-color: rgba(255, 255, 255, 0.15); 
+    backdrop-filter: blur(10px); 
+    border: 2px solid var(--theme-color, #00FFF2); 
+    
     padding: 30px 40px;
     border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.7);
     text-align: center;
     transition: background 1s, box-shadow 1s;
     animation: panelGradient 10s infinite alternate;
-    position: relative; /* Container içinde düzgün hizalama için */
+    position: relative; 
+    z-index: 1; 
 }
+/* Animasyon zaten gölgeyi ve tema rengini değiştiriyor */
 @keyframes panelGradient {
     -25% { --theme-color: #FF00D4; box-shadow: 0 0 20px #FF00D4; }
     0% { --theme-color: #00FFF2; box-shadow: 0 0 20px #00FFF2; }
@@ -69,29 +93,35 @@ body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: 
     outline: none;
     transition: border-color 0.5s, box-shadow 0.5s, color 0.5s;
     color: #fff;
-    background-color: #000;
+    background-color: #000; /* Input içi opak kalmalı */
 }
 .panel input:focus {
     border-color: var(--theme-color, #00FFF2);
     box-shadow: 0 0 10px var(--theme-color, #00FFF2);
 }
 
-/* Buton stili (TÜM BUTONLAR İÇİN ORTAK GENİŞLİK) */
+/* Buton stili (TÜM BUTONLAR İÇİN) - Liquid Glass */
 .panel button, #updateButton, #topButtons button, #updatePanel button {
     padding: 10px 15px; 
-    width: 100px; /* Sabit genişlik */
+    width: 100px; 
     text-align: center;
     border-radius: 50px;
+    
+    background: rgba(255, 255, 255, 0.15); /* Liquid Glass */
+    backdrop-filter: blur(5px); /* Liquid Glass */
     border: 2px solid var(--theme-color, #00FFF2);
-    background: linear-gradient(90deg, var(--theme-color, #00FFF2), #000);
+    box-shadow: 0 0 10px var(--theme-color, #00FFF2); /* Neon */
+    
     color: #fff;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.4s ease;
+    z-index: 1; 
 }
 .panel button:hover, #updateButton:hover, #topButtons button:hover, #updatePanel button:hover {
     transform: scale(1.05); 
-    box-shadow: 0 0 20px var(--theme-color, #00FFF2);
+    box-shadow: 0 0 25px var(--theme-color, #00FFF2); /* Güçlü Neon */
+    background: rgba(255, 255, 255, 0.25); /* Hover'da daha parlak */
 }
 
 /* Üst butonlar */
@@ -104,12 +134,11 @@ body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: 
     gap: 10px; 
     z-index: 10;
     max-width: 95vw;
-    opacity: 0; /* Başlangıçta gizli */
-    visibility: hidden; /* Başlangıçta gizli */
-    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out; /* Geçiş ekle */
+    opacity: 0; 
+    visibility: hidden; 
+    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out; 
 }
 
-/* Üst butonlar görünür olduğunda */
 #topButtons.active {
     opacity: 1;
     visibility: visible;
@@ -117,12 +146,9 @@ body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: 
 
 /* Editör ekranı */
 #editor {
-    display: flex; /* Varsayılan olarak flex, active-screen ile birlikte çalışır */
-    height: 100%;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    /* position: relative; kaldırıldı, üstteki .active-screen'e taşındı */
+    padding-top: 80px; 
 }
 
 /* Kod ve önizleme bölümü */
@@ -136,6 +162,7 @@ body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: 
     padding: 20px;
     flex-direction: column;
     position: relative;
+    z-index: 1; 
 }
 
 /* Partikül canvas */
@@ -143,42 +170,49 @@ body, html { height: 100%; font-family: 'Roboto', sans-serif; background-color: 
     position: absolute;
     width: 100%; height: 100%;
     pointer-events: none;
-    z-index: 0;
+    z-index: 2; 
+    top: 0;
+    left: 0;
 }
 
+/* Textarea ve Iframe - Liquid Glass */
 textarea, .iframe-container {
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     position: relative;
     transition: border-color 0.5s, background 0.5s;
-    z-index: 1;
+    z-index: 3; 
     width: 90%;
     height: 80%;
 }
 
+/* Textarea - Liquid Glass */
 textarea {
     padding: 15px;
-    background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
-    color: var(--theme-color, #00FFF2);
+    background: rgba(255, 255, 255, 0.1); 
+    backdrop-filter: blur(5px); 
+    color: #fff; 
     font-family: monospace;
     font-size: 16px;
     resize: none;
     outline: none;
-    border: 2px solid var(--theme-color, #00FFF2);
+    border: 2px solid var(--theme-color, #00FFF2); 
     transition: transform 0.3s, box-shadow 0.3s, border-color 0.5s, color 0.3s;
 }
 textarea:focus {
-    box-shadow: 0 0 20px var(--theme-color, #00FFF2);
+    box-shadow: 0 0 20px var(--theme-color, #00FFF2); 
     transform: scale(1.02);
 }
 
+/* Iframe - Liquid Glass */
 .iframe-container {
-    display: none; /* runCode ile block/flex olacak */
+    display: none; 
     border-radius: 12px;
     overflow: hidden;
     position: relative;
-    background: linear-gradient(135deg, var(--theme-color, #00FFF2), #000);
-    border: 2px solid var(--theme-color, #00FFF2);
+    background: rgba(255, 255, 255, 0.15); 
+    backdrop-filter: blur(10px); 
+    border: 2px solid var(--theme-color, #00FFF2); 
+    box-shadow: 0 0 15px var(--theme-color, #00FFF2); 
 }
 iframe {
     width: 100%;
@@ -192,33 +226,44 @@ iframe {
     flex-direction: column;
     align-items: center;
     margin-top: 10px;
+    z-index: 3; 
 }
 
+/* RunButton - Liquid Glass */
 #runButton {
     padding: 6px 12px;
     font-size: 13px;
     display: block;
     cursor: pointer;
-    background-color: transparent;
+    
+    background: rgba(255, 255, 255, 0.15); /* Liquid Glass */
+    backdrop-filter: blur(5px); /* Liquid Glass */
+    box-shadow: 0 0 10px var(--theme-color, #00FFF2); /* Neon */
+    
     border: 2px solid var(--theme-color, #00FFF2);
     color: var(--theme-color, #00FFF2);
     font-weight: bold;
     border-radius: 8px;
-    transition: background-color 0.2s, color 0.2s, transform 0.2s, border-color 0.2s;
+    transition: background-color 0.2s, color 0.2s, transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 #runButton:hover {
-    background-color: var(--theme-color, #00FFF2);
-    color: #000;
+    background: rgba(255, 255, 255, 0.25); /* Hover */
+    color: #fff; /* Hover */
     transform: scale(1.05);
+    box-shadow: 0 0 20px var(--theme-color, #00FFF2); /* Güçlü Neon */
 }
 
-/* Geri dön butonu stili */
+/* Geri dön butonu stili - Liquid Glass */
 #closePreview {
     margin-top: 8px;
     padding: 8px 18px;
     border-radius: 12px;
     border: 2px solid var(--theme-color, #00FFF2);
-    background: #111;
+    
+    background: rgba(255, 255, 255, 0.15); /* Liquid Glass */
+    backdrop-filter: blur(5px); /* Liquid Glass */
+    box-shadow: 0 0 10px var(--theme-color, #00FFF2); /* Neon */
+    
     color: var(--theme-color, #00FFF2);
     font-weight: bold;
     cursor: pointer;
@@ -227,25 +272,86 @@ iframe {
 #closePreview:hover {
     transform: scale(1.05);
     box-shadow: 0 0 20px var(--theme-color, #00FFF2);
-    background: linear-gradient(90deg, var(--theme-color, #00FFF2), #000);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.25); /* Hover */
+    color: #fff; /* Hover */
 }
 
 /* Boş sayfa ve hesap kutusu */
 #blankPage { 
-    display:flex; /* Varsayılan olarak flex, active-screen ile birlikte çalışır */
-    background:#000; 
-    width:100%; 
-    height:100%; 
     justify-content:flex-start; 
     align-items:center; 
-    flex-direction:column; 
     padding-top:80px;
     gap:20px;
-    position: relative;
     padding-left: 20px; 
     padding-right: 20px;
 }
+
+/* Arkaplan ekranı */
+#backgroundScreen {
+    justify-content: center;
+    align-items: center;
+    padding: 80px 20px 20px 20px; 
+}
+
+/* Arkaplan kutularını tutan konteyner */
+.background-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 900px; 
+    z-index: 1; 
+}
+
+/* Arkaplan seçim kutuları - Liquid Glass */
+.background-box {
+    width: 200px;
+    height: 150px;
+    border: 2px solid var(--theme-color, #00FFF2); 
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px var(--theme-color, #00FFF2); 
+    overflow: hidden; 
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+/* Resimlerin üzerindeki siyah katman (%60) */
+.background-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); 
+    z-index: 0;
+    transition: background-color 0.3s ease;
+}
+
+.background-box:hover::before {
+    background-color: rgba(0, 0, 0, 0.4); 
+}
+.background-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 25px var(--theme-color, #00FFF2); 
+    color: var(--theme-color, #00FFF2);
+}
+
+.background-box h3 {
+    font-weight: 400;
+    z-index: 1; 
+}
+
 
 /* Hesap kutuları sarmalayıcısı */
 .accountBox-container {
@@ -254,15 +360,18 @@ iframe {
     width: 90%;
     max-width: 400px;
     gap: 15px;
+    z-index: 1; 
 }
 
+/* Hesap Kutusu - Liquid Glass */
 .accountBox {
     min-height: 80px; 
     border-radius: 12px;
-    border: 2px solid var(--theme-color, #00FFF2);
-    background: #111;
+    border: 2px solid var(--theme-color, #00FFF2); 
+    background: rgba(255, 255, 255, 0.15); 
+    backdrop-filter: blur(10px); 
     color: #fff;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    box-shadow: 0 0 15px var(--theme-color, #00FFF2); 
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -270,14 +379,15 @@ iframe {
     padding: 15px 20px;
     transition: all 0.5s ease;
     position: relative;
+    z-index: 1; 
 }
 .accountBox:hover {
-    box-shadow: 0 0 25px var(--theme-color, #00FFF2);
+    box-shadow: 0 0 25px var(--theme-color, #00FFF2); 
     transform: translateY(-2px);
 }
 .accountBox h3 {
     margin-bottom: 5px;
-    color: var(--theme-color, #00FFF2);
+    color: #fff; 
     font-size: 14px;
     font-weight: 400;
     text-transform: uppercase;
@@ -295,28 +405,32 @@ iframe {
     transform: translateY(-50%);
     background: transparent;
     border: none;
-    color: var(--theme-color, #00FFF2);
+    color: var(--theme-color, #00FFF2); 
     font-size: 20px;
     cursor: pointer;
     transition: color 0.3s;
     line-height: 1;
+    z-index: 2; 
 }
 #showPassButton:hover {
     color: #fff;
     text-shadow: 0 0 5px var(--theme-color, #00FFF2);
 }
 
-/* Güncelle panel */
+/* Güncelle panel - Liquid Glass */
 #updatePanel {
     display:none; 
     margin-top:10px; 
-    background:#111; 
+    background: rgba(255, 255, 255, 0.15); 
+    backdrop-filter: blur(10px); 
+    border: 2px solid var(--theme-color, #00FFF2); 
     padding:20px; 
     border-radius:10px; 
     width:90%; 
     max-width: 400px; 
-    box-shadow:0 0 15px rgba(0,0,0,0.5);
+    box-shadow: 0 0 15px var(--theme-color, #00FFF2); 
     transition: all 0.4s ease;
+    z-index: 1; 
 }
 #updatePanel input {
     width:90%; 
@@ -329,37 +443,39 @@ iframe {
     transition: all 0.4s ease;
 }
 #updateButton {
-    padding: 10px 20px;
-    border-radius: 12px;
-    border: 2px solid var(--theme-color, #00FFF2);
-    background: #000;
-    color: var(--theme-color, #00FFF2);
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.4s ease;
     width: 90%; 
     max-width: 400px;
     margin-top: 10px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
-#updateButton:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 25px var(--theme-color, #00FFF2);
-    border-color: var(--theme-color, #00FFF2);
-    color: #fff;
-    background: linear-gradient(90deg, var(--theme-color, #00FFF2), #000);
-}
+
 </style>
 </head>
 <body>
 
-<div id="topButtons"> <button onclick="cycleTheme()">Tema</button>
-
+<div id="topButtons">
+    <button onclick="cycleTheme()">Tema</button>
     <button onclick="showEditor()">Kod</button>
-    
     <button onclick="showBlank()">Hesap</button>
+    <button onclick="showBackgroundScreen()">Arkaplan</button>
     <button onclick="logout()">Çıkış Yap</button>
+</div>
 
+<div id="backgroundScreen">
+    <div class="background-container">
+        
+<div class="background-box" data-bg-url="https://i.pinimg.com/1200x/0d/86/6e/0d866ed6b296a3ba1ae10c0f9da1d72a.jpg" ><h3>Arkaplan 1</h3></div>
+<div class="background-box" data-bg-url="https://i.pinimg.com/736x/dc/f3/20/dcf3203b0d97f915311ba01f1481e5bd.jpg" ><h3>Arkaplan 2</h3></div>
+<div class="background-box" data-bg-url="https://i.pinimg.com/736x/bb/3e/e2/bb3ee21e21c6b5f418080c34deb157a2.jpg" ><h3>Arkaplan 3</h3></div>
+<div class="background-box" data-bg-url="https://i.pinimg.com/1200x/a8/48/a7/a848a777225fbe50d2ba5e5b91dba8b7.jpg" ><h3>Arkaplan 4</h3></div>
+<div class="background-box" data-bg-url="https://i.pinimg.com/736x/9a/01/35/9a01354fe73735e6bf63a8013b39e536.jpg" ><h3>Arkaplan 5</h3></div>
+<div class="background-box" data-bg-url="https://i.pinimg.com/1200x/59/fa/52/59fa52b7125d11c98b010ec97687be02.jpg" ><h3>Arkaplan 6</h3></div>
+<div class="background-box" data-bg-url="https://i.pinimg.com/736x/5f/ce/b5/5fceb5371c7a7d9661ea3f046d9b630b.jpg" ><h3>Arkaplan 7</h3></div>
+<div class="background-box" data-bg-url="https://i.pinimg.com/1200x/96/47/30/96473090cb087250e35a5602a48b5df4.jpg" ><h3>Arkaplan 8</h3></div>
+        
+<div class="background-box" id="clearBackground" style="background-color: #333; border-color: #555;">
+            <h3>Arkaplanı Kaldır</h3>
+        </div>
+    </div>
 </div>
 
 <div id="loginPanel" class="container">
@@ -425,17 +541,27 @@ iframe {
 
 <script>
 // --- TEMA DÖNGÜSÜ İÇİN DEĞİŞKENLER VE FONKSİYONLAR ---
-const THEMES = ['#FF00D4', '#00FFF2', '#4cff4c', '#E100FF', '#E1FF00', '#FF8000'];
+const THEMES = [
+    '#FF00D4', '#00FFF2', '#4cff4c', '#E100FF', '#E1FF00', '#FF8000',
+    '#AAFF00', '#FF0000', '#FF0077', '#1100FF', '#00DEC4', '#BFFF00'
+];
 let currentThemeIndex = 0;
-let livePreviewTimeout; // Canlı önizleme için yeni değişken
+let livePreviewTimeout; 
 
 function cycleTheme() {
+    // YENİ: Otomatik seçilen bir temadan (dizide olmayan) sonra basılırsa,
+    // mevcut index'i bulup oradan devam etsin veya sıfırlasın.
+    const currentTheme = localStorage.getItem('theme_color') || THEMES[0];
+    currentThemeIndex = getThemeIndex(currentTheme); // index -1 ise 0'dan başlar
+    
     currentThemeIndex = (currentThemeIndex + 1) % THEMES.length;
     const newColor = THEMES[currentThemeIndex];
     setTheme(newColor);
 }
 
 function getThemeIndex(color) {
+    // Eğer renk dizide yoksa (özel renkse), -1 döndürür.
+    // cycleTheme fonksiyonu (-1 + 1) % length = 0 ile başa döner.
     return THEMES.indexOf(color);
 }
 // -----------------------------------------------------------
@@ -445,37 +571,41 @@ function triggerLivePreview() {
     clearTimeout(livePreviewTimeout);
     livePreviewTimeout = setTimeout(() => {
         if (document.getElementById('iframeContainer').style.display !== 'none') {
-            runCode(true); // Canlı önizleme modunda çalıştır
+            runCode(true); 
         }
     }, 500); 
 }
 // -----------------------------------------------------------
 
 
-// --- SAYFA GEÇİŞ FONKSİYONLARI (GÜNCELLENDİ) ---
+// --- SAYFA GEÇİŞ FONKSİYONLARI ---
+const screens = ['editor', 'blankPage', 'loginPanel', 'registerPanel', 'backgroundScreen'];
+const screenElements = {};
+screens.forEach(id => {
+    screenElements[id] = document.getElementById(id);
+});
+
 function hideAllScreens() {
-    // Tüm ana ekranlardan ve topButtons'tan .active-screen sınıfını kaldır
-    document.getElementById('editor').classList.remove('active-screen');
-    document.getElementById('blankPage').classList.remove('active-screen');
-    document.getElementById('loginPanel').classList.remove('active-screen');
-    document.getElementById('registerPanel').classList.remove('active-screen');
+    screens.forEach(id => {
+        screenElements[id].classList.remove('active-screen');
+    });
     document.getElementById('topButtons').classList.remove('active');
 }
 
 function showScreen(screenId, displayTopButtons = false) {
-    hideAllScreens(); // Tüm ekranları gizle
+    hideAllScreens(); 
 
-    const screen = document.getElementById(screenId);
+    const screen = screenElements[screenId];
     if (screen) {
-        screen.classList.add('active-screen'); // Yeni ekranı aktif yap
+        screen.classList.add('active-screen'); 
+        applySavedBackground();
     }
 
     if (displayTopButtons) {
-        document.getElementById('topButtons').classList.add('active'); // Üst butonları göster
+        document.getElementById('topButtons').classList.add('active'); 
     }
 }
 
-// showEditor, showBlank, showLogin, showRegister artık showScreen'i kullanacak
 function showEditor(){
     showScreen('editor', true);
 }
@@ -488,13 +618,15 @@ function showBlank(){
         updateAccountInfo(lastUser, storedPass); 
     }
 }
+function showBackgroundScreen() {
+    showScreen('backgroundScreen', true);
+}
 
-// Giriş / Kayıt Paneli
 function showLogin() { 
-    showScreen('loginPanel', false); // Giriş ekranında üst butonlar gizli
+    showScreen('loginPanel', false); 
 }
 function showRegister() { 
-    showScreen('registerPanel', false); // Kayıt ekranında üst butonlar gizli
+    showScreen('registerPanel', false); 
 }
 // -----------------------------------------------------------
 
@@ -532,7 +664,7 @@ function login(){
         updateAccountInfo(user, stored); 
         setTheme(localStorage.getItem('theme_color') || THEMES[0]);
         
-        showEditor(); // Giriş başarılı, editöre yönlendir
+        showEditor(); 
 
     }else{
         alert("Hatalı kullanıcı adı veya şifre.");
@@ -553,25 +685,28 @@ function checkSession() {
         const storedPass = localStorage.getItem("user_" + lastUser);
         updateAccountInfo(lastUser, storedPass); 
         
+        // YENİ: Otomatik seçilen tema da burada yüklenecek
         const savedTheme = localStorage.getItem('theme_color') || THEMES[0];
         setTheme(savedTheme);
-        currentThemeIndex = getThemeIndex(savedTheme);
+        // Index'i de ayarla ki cycleTheme doğru çalışsın
+        currentThemeIndex = getThemeIndex(savedTheme); 
+
+        applySavedBackground();
         
-        showEditor(); // Oturum açınca editörü göster
+        showEditor(); 
 
     } else {
         showLogin();
     }
 }
 
-// Kod çalıştırma (isLivePreview parametresi eklendi)
+// Kod çalıştırma
 function runCode(isLivePreview = false) {
     const codeArea = document.getElementById('code');
     const iframeContainer = document.getElementById('iframeContainer');
     const iframe = document.getElementById('result');
     const runContainer = document.getElementById('runContainer');
 
-    // Eğer Canlı Önizleme değilse ve kod alanı görünüyorsa, önizlemeyi aç
     if (!isLivePreview && codeArea.style.display !== 'none') {
         codeArea.style.display = 'none';
         iframeContainer.style.display = 'block';
@@ -579,7 +714,6 @@ function runCode(isLivePreview = false) {
         iframeContainer.style.height = '80%';
     }
     
-    // Iframe içeriğini ayarla
     iframe.srcdoc = `
         <!DOCTYPE html>
         <html>
@@ -594,7 +728,6 @@ function runCode(isLivePreview = false) {
         </html>
     `;
 
-    // Geri dön butonu ekleme mantığı (Sadece butona basınca eklenir)
     if(!document.getElementById('closePreview') && !isLivePreview) {
         const closeBtn = document.createElement('button');
         closeBtn.id = 'closePreview';
@@ -618,41 +751,17 @@ function closePreview() {
 }
 
 function updateAccountBoxesTheme(color){
-    const boxes = [document.getElementById('usernameBox'), document.getElementById('passwordBox')];
-    boxes.forEach(box => { 
-        box.style.setProperty('--theme-color', color); 
-        const showPassBtn = document.getElementById('showPassButton');
-        if(showPassBtn) showPassBtn.style.color = color;
-    });
+    // CSS değişkenleri artık bu işi otomatik yapıyor.
 }
 
+// TEMA AYARLAMA (JavaScript GÜNCELLENDİ - Temizlendi)
 function setTheme(color){
+    // İster standart tema olsun ister özel arkaplan teması,
+    // ikisi de localStorage'a kaydedilir ve CSS değişkenini ayarlar.
     localStorage.setItem('theme_color', color);
     
     document.documentElement.style.setProperty('--theme-color', color);
-    const iframeContainer = document.getElementById('iframeContainer');
-    iframeContainer.style.background = `linear-gradient(135deg, ${color}, #000)`;
-    iframeContainer.style.borderColor = color;
-    document.getElementById('code').style.borderColor = color;
     
-    const navButtons = document.querySelectorAll('#topButtons button');
-    navButtons.forEach(btn => {
-        btn.style.borderColor = color;
-        btn.style.background = `linear-gradient(90deg, ${color}, #000)`;
-        btn.style.color = '#fff';
-    });
-    
-    const runBtn = document.getElementById('runButton');
-    runBtn.style.borderColor = color;
-    runBtn.style.color = color;
-    
-    document.querySelector('.panel').style.setProperty('--theme-color', color);
-
-    updateAccountBoxesTheme(color);
-    const updateBtn = document.getElementById('updateButton');
-    updateBtn.style.borderColor = color;
-    
-    // Canlı önizleme açıksa temayı güncelleyince kodu yeniden çalıştır
     if (document.getElementById('iframeContainer').style.display !== 'none') {
         runCode(true);
     }
@@ -661,16 +770,13 @@ function setTheme(color){
 function updateAccountInfo(username, password){
     document.getElementById('usernameDisplay').textContent = username;
     document.getElementById('passwordDisplay').textContent = "********";
-
     document.getElementById('passwordDisplay').setAttribute('data-actual-pass', password);
-    
     document.getElementById('showPassButton').textContent = '👁️';
 }
 
 function togglePasswordVisibility() {
     const passDisplay = document.getElementById('passwordDisplay');
     const showPassBtn = document.getElementById('showPassButton');
-    
     const actualPass = passDisplay.getAttribute('data-actual-pass');
     
     if (passDisplay.textContent === '********') {
@@ -753,6 +859,85 @@ function createParticles(canvasId){
     }
     animate();
 }
+
+// Arkaplanı ayarla fonksiyonu
+function setAppBackground(imageUrl) {
+    localStorage.setItem('app_background_image', imageUrl);
+    applySavedBackground();
+}
+
+// Kaydedilen arkaplanı tüm ekranlara uygula
+function applySavedBackground() {
+    const imageUrl = localStorage.getItem('app_background_image');
+    screens.forEach(id => {
+        const screen = screenElements[id];
+        if (imageUrl) {
+            screen.style.backgroundImage = `url('${imageUrl}')`;
+        } else {
+            screen.style.backgroundImage = 'none';
+        }
+    });
+}
+
+// Sayfa yüklendiğinde kutucuklara tıklama olayını ekle
+document.addEventListener('DOMContentLoaded', () => {
+    const backgroundBoxes = document.querySelectorAll('.background-box[data-bg-url]');
+    
+    backgroundBoxes.forEach(box => {
+        const imageUrl = box.getAttribute('data-bg-url');
+        const themeColor = box.getAttribute('data-theme-color'); // YENİ
+        
+        box.style.backgroundImage = `url('${imageUrl}')`; 
+
+        box.addEventListener('click', () => {
+            setAppBackground(imageUrl);
+            
+            // YENİ: Eğer kutuda özel bir tema rengi varsa, onu da ayarla
+            if (themeColor) {
+                setTheme(themeColor);
+                alert('Arkaplan ve arkaplana özel tema ayarlandı!');
+            } else {
+                alert('Arkaplan başarıyla ayarlandı!');
+            }
+        });
+    });
+
+    // "Arkaplanı Kaldır" butonu GÜNCELLENDİ
+    const clearBackgroundButton = document.getElementById('clearBackground');
+    if (clearBackgroundButton) {
+        clearBackgroundButton.addEventListener('click', () => {
+            setAppBackground(''); // Arkaplanı temizle
+            
+            // YENİ: Temayı, döngüdeki (kayıtlı) orijinal temaya geri döndür
+            const originalTheme = localStorage.getItem('theme_color_original') || THEMES[0];
+            setTheme(originalTheme); // Not: setTheme, 'theme_color'u günceller
+            
+            alert('Arkaplan kaldırıldı ve tema sıfırlandı!');
+        });
+    }
+
+    // YENİ: cycleTheme fonksiyonunun 'theme_color_original'ı saklaması
+    // (Bunu setTheme içine de koyabiliriz, daha temiz olur)
+    // -> setTheme'e taşıyalım.
+});
+
+// TEMA AYARLAMA (JavaScript GÜNCELLENDİ - Orijinal temayı sakla)
+function setTheme(color){
+    localStorage.setItem('theme_color', color);
+    
+    // YENİ: Eğer bu renk standart temalardan biriyse,
+    // "orijinal" olarak sakla ki "Arkaplanı Kaldır"da buna dönebilelim.
+    if (THEMES.includes(color)) {
+        localStorage.setItem('theme_color_original', color);
+    }
+    
+    document.documentElement.style.setProperty('--theme-color', color);
+    
+    if (document.getElementById('iframeContainer').style.display !== 'none') {
+        runCode(true);
+    }
+}
+
 
 createParticles('editorCanvas');
 createParticles('blankCanvas');
